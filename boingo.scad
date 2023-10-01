@@ -1,127 +1,167 @@
-include <variables.scad>
-
-$fs=0.5;
-
-baseRadius = 15;
-baseHeight = 4;
-
-module base(h=3, r=8, outDrill=false, centerDrill=false, outDrillDiameter=boltDiameter, centerDrillDiameter=boltDiameter)
+module spring(steps=0, h=25, revs=10, thickness=1, r=0, r1=3, r2=0, base=false) //Boing boing boing
+{difference(){union()
 {
-    difference()
+    //Sets r1 size to r ir it wasn't defined
+    r1 = r==0 ? r1 : r;
+    //Sets r2 size to r1 if it wasn't defined
+    r2 = r2==0 ? r1 : r2;
+
+    //Automatically calculate number of steps
+    steps = steps==0 ? (h*revs*(r1+r2)/2)/20 : steps;
+    echo(steps=steps);
+
+    //Change height, so the size bottom to top matches the one predefined
+    h = base ? h-thickness/2 : h;
+    //Move it up to position it's bottom on the ground
+    translate([0,0,base ? thickness/2 : 0])
     {
-        linear_extrude(h)
-            polygon([
-                [0, r],
-                [r*sin(120), r*cos(120)],
-                [r*sin(240), r*cos(240)]
-            ]);
-        if (outDrill) { for (i=[0, 120, 240]) { rotate([0,0,i]) {
-            translate([0,r*2/3,0])
-                cylinder(d=outDrillDiameter, h=h+0.01);
-        }}}
-        if (centerDrill)
-        {
-            cylinder(d=centerDrillDiameter, h=h+0.01);
+    //If it should have a base, model it
+    if (base) { for (i=[0:steps/revs])
+    {
+        thisScalar = i/steps;
+        nextScalar = (i+1)/steps;
+        for (j=[0,h]) {
+            r = (j==0?r1:r2);
+            hull()
+            {
+                translate([
+                    r*cos(revs*360*thisScalar),
+                    r*sin(revs*360*thisScalar),
+                    j,
+                ])
+                    sphere(d=thickness);
+                translate([
+                    r*cos(revs*360*nextScalar),
+                    r*sin(revs*360*nextScalar),
+                    j,
+                ])
+                    sphere(d=thickness);
+            }
         }
-    }
-}
-
-module spring(steps=0, h=25, revs=10, thickness=1, r=3) //Boing boing boing
-{
-
-    steps = steps==0 ? ($preview ? h*revs*r : h*revs*r*10) : steps;
-    h = h-thickness*2;
-    translate([0,0,thickness/2])
+    }}
+    for (i=[0:steps-1])
     {
-    for (i=[0:steps/revs])
-    {
-        scalar = i/steps;
-        for (j=[0,h])
-        {
-            translate([
-                r*cos(revs*360*scalar),
-                r*sin(revs*360*scalar),
-                j,
-            ])
-            sphere(d=thickness);
-        }
-    }
-    for (i=[0:steps])
-    {
-        scalar = i/steps;
-        translate([
-            r*cos(revs*360*scalar),
-            r*sin(revs*360*scalar),
-            h*scalar
-        ])
-        sphere(d=thickness);
-    }
-    }
-}
-
-module conicSpring(steps=0, h=25, revs=10, thickness=1, topR=3, bottomR=5) //Boing boing boing
-{
-
-    steps = steps==0 ? ($preview ? h*revs*r : h*revs*(topR+bottomR)/2*10) : steps;
-    h = h-thickness*2;
-    translate([0,0,thickness/2])
-    {
-    for (i=[0:steps/revs])
-    {
-        scalar = i/steps;
-        for (j=[0,h])
+        thisScalar = i/steps;
+        nextScalar = (i+1)/steps;
+        thisR = r1 + (r2-r1)*thisScalar;
+        nextR = r1 + (r2-r1)*nextScalar;
+        hull()
         {
             translate([
-                (bottomR+(topR-bottomR)*scalar)*cos(revs*360*scalar),
-                (bottomR+(topR-bottomR)*scalar)*sin(revs*360*scalar),
-                j,
+                thisR*cos(revs*360*thisScalar),
+                thisR*sin(revs*360*thisScalar),
+                h*thisScalar
             ])
-            sphere(d=thickness);
+                sphere(d=thickness);
+            translate([
+                nextR*cos(revs*360*nextScalar),
+                nextR*sin(revs*360*nextScalar),
+                h*nextScalar
+            ])
+                sphere(d=thickness);
         }
     }
-    for (i=[0:steps])
-    {
-        scalar = i/steps;
-        translate([
-            scalar*r*cos(revs*360*scalar),
-            scalar*r*sin(revs*360*scalar),
-            h*scalar
-        ])
-        sphere(d=thickness);
-    }
     }
 }
+    //Remove base if it should not have one
+    if (!base)
+    {
+        //Remove bottom tip
+        translate([0, 0, -thickness/2])
+            cylinder(r=r1+thickness/2*1.1, h=thickness/2);
+        //Remove top tip
+        translate([0, 0, h])
+            cylinder(r=r2+thickness/2*1.1, h=thickness/2);
 
-union()
+    }
+}}
+
+module roundBowSpring(steps=0, height=10, thickness=1, width=3, base=false, baseWidth=0)
+{difference() {union()
 {
-    //Bottom base
-    base(h=baseHeight, r=baseRadius, outDrill=true, centerDrill=true, centerDrillDiameter=boltDiameter);
-    difference()
+    steps = steps==0 ? height+width : steps;
+    height = base ? height-thickness*2 : height;
+    baseWidth = baseWidth==0 ? (width==0 ? thickness : width) : baseWidth;
+    translate(base ? [0,0,thickness] : [0,0,0])
+    for (i=[0:steps-1])
     {
-        conicSpring(h=30, thickness=2, topR=6, bottomR=4, revs=6);
+        thisScalar = i/steps;
+        nextScalar = (i+1)/steps;
+        hull()
+        {
+            translate([
+                width*sin(thisScalar*180),
+                0,
+                height*thisScalar
+            ])
+                sphere(d=thickness);
+            translate([
+                width*sin(nextScalar*180),
+                0,
+                height*nextScalar
+            ])
+                sphere(d=thickness);
+        }
+    }
+    if (base)
+    {
+        translate([-width/2, -thickness/2, 0])
+            cube([width, thickness, thickness]);
+        translate([-width/2, -thickness/2, height+thickness])
+            cube([width, thickness, thickness]);
     }
 }
+    if (!base)
+    {
+        translate([-thickness/2, -thickness/2, -thickness/2])
+            cube([2*thickness, 2*thickness, thickness/2]);
+        translate([-thickness/2, -thickness/2, height])
+            cube([2*thickness, 2*thickness, thickness/2]);
+    }
 
+}}
 
-
-//Sleeve base
-/*
-difference()
+module squareBowSpring(steps=0, height=10, thickness=1, width=3, base=false, baseWidth=0)
+{difference() {union()
 {
-    base(h=boltDiameter+4, r=baseRadius, outDrill=true, centerDrill=true, outDrillDiameter=boltDiameter+0.5);
-    translate([0,0,(boltDiameter+4)/2])
-    rotate([-90,0,0])
-    for (i=[-1,1])
+    steps = steps==0 ? height+width : steps;
+    height = base ? height-thickness*2 : height;
+    baseWidth = baseWidth==0 ? (width==0 ? thickness : width) : baseWidth;
+    translate(base ? [0,0,thickness] : [0,0,0])
+    for (i=[0:steps-1])
     {
-        translate([i*4.5, 0, -10])
-        cylinder(h=20, d=boltDiameter);
+        thisScalar = i/steps;
+        nextScalar = (i+1)/steps;
+        hull()
+        {
+            translate([
+                width*sin(thisScalar*180),
+                0,
+                height*thisScalar
+            ])
+                cube(thickness, center=true);
+            translate([
+                width*sin(nextScalar*180),
+                0,
+                height*nextScalar
+            ])
+                cube(thickness, center=true);
+        }
+    }
+    if (base)
+    {
+        translate([-width/2, -thickness/2, 0])
+            cube([width, thickness, thickness]);
+        translate([-width/2, -thickness/2, height+thickness])
+            cube([width, thickness, thickness]);
     }
 }
-*/
-//Tubes
-//for (i=[0,1,2])
-//{
-//   translate([10+i*4, 10, 0])
-//    cylinder(h=boltLenght, d=boltDiameter-0.5);
-//}
+    if (!base)
+    {
+        translate([-thickness/2*1.1, -thickness/2*1.1, -thickness/2*1.1])
+            cube([2*thickness*1.2, 2*thickness*1.2, thickness/2*1.1]);
+        translate([-thickness/2*1.1, -thickness/2*1.1, height])
+            cube([2*thickness*1.2, 2*thickness*1.2, thickness/2*1.1]);
+    }
 
+}}
