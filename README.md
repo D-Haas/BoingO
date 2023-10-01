@@ -1,10 +1,5 @@
 # BoingO
-This library aims to provide a way to create differents spring types within any parameters the user fill.
-
-
-![Regular](images/spring.png)
-![Rounded Bow](images/roundedBowSpring.png)
-![Square Bow](images/squareBowSpring.png)
+This library aims to provide a way to create differents spring types within any parameters the user fill. I created this in order to solve some problems for another project of mine, but since it could be useful to other projects, I saved this in a separate folder as a library. 
 
 ## How to use
 ```openscad
@@ -31,3 +26,24 @@ roundBowSpring(
 
 squareBowSpring(); //Same as roundBowSpring but made out of cubes instead of spheres
 ```
+
+
+```openscad
+spring(steps=500, base=true);
+```
+![Regular](images/regular.png)
+
+```openscad
+spring(steps=500, r1=2, r2=4, base=false);
+```
+![Conic spring](images/conicRegular.png)
+
+```openscad
+roundBowSpring(steps=500, height=25, width=10, base=true);
+```
+![Round bow spring](images/roundBowSpring.png)
+
+```openscad
+squareBowSpring(steps=500, height=25, width=10, base=false);
+```
+![Square bow spring](images/squareBowSpring.png)
