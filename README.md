@@ -22,8 +22,8 @@ spring(
 
 roundBowSpring(
   steps,     //Same as above
-  h,         *
-  thickness, *
+  h,         //*
+  thickness, //*
   width,     //Arch's distortion on the y-axis (making a sine curve)
   base,      //Same as above
   baseWifth  //Base size along the y-axis (size keeps the same along the x and z axis, which is equal thickness)
